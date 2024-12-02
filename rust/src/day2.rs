@@ -72,7 +72,7 @@ pub fn part2() {
     let input = std::fs::read_to_string("../day2.txt").unwrap();
     let levels = parse_level_list(input);
 
-    let a = levels
+    let ans = levels
         .iter()
         .map(|r| {
             for i in 0..r.len() {
@@ -87,5 +87,5 @@ pub fn part2() {
         .filter(|r| *r)
         .count();
 
-    println!("{a}");
+    println!("{ans}");
 }
