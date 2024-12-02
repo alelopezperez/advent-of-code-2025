@@ -15,10 +15,8 @@ enum Safety {
     Decrease,
     NotValid,
 }
-
-fn check_safety(report: Vec<i64>) -> bool {
+fn check_safety<'a>(report: impl Iterator<Item = &'a i64> + Clone) -> bool {
     let mut it = report
-        .iter()
         .scan(-1, |prev, level| {
             if *prev == -1 {
                 *prev = *level;
@@ -76,9 +74,7 @@ pub fn part2() {
         .iter()
         .map(|r| {
             for i in 0..r.len() {
-                let mut dup = r.clone();
-                dup.remove(i);
-                if check_safety(dup) {
+                if check_safety(r.iter().skip_nth(i)) {
                     return true;
                 }
             }
@@ -88,4 +84,45 @@ pub fn part2() {
         .count();
 
     println!("{ans}");
+}
+
+trait SkipNth: Iterator {
+    fn skip_nth(self, nth: usize) -> SkipNthAdapter<Self>
+    where
+        Self: Sized,
+    {
+        SkipNthAdapter {
+            iter: self,
+            nth,
+            counter: 0,
+        }
+    }
+}
+impl<I: Iterator> SkipNth for I {}
+
+#[must_use = "iterators are lazy and do nothing unless consumed"]
+#[derive(Clone)]
+struct SkipNthAdapter<I> {
+    iter: I,
+    nth: usize,
+    counter: usize,
+}
+
+impl<I> Iterator for SkipNthAdapter<I>
+where
+    I: Iterator,
+{
+    type Item = I::Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.counter == self.nth {
+            self.counter += 1;
+            self.iter.next();
+            self.iter.next()
+        } else {
+            self.counter += 1;
+
+            self.iter.next()
+        }
+    }
 }
