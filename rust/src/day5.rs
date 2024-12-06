@@ -22,8 +22,7 @@ fn check_page(page: &[usize], rules: &HashMap<usize, Vec<usize>>) -> bool {
     page.iter()
         .fold((true, Vec::<usize>::new()), |(mut acc, mut set), num| {
             if let Some(before) = rules.get(num) {
-                let found = set.iter().all(|s| !before.iter().any(|b| s == b));
-                if found {
+                if set.iter().all(|s| !before.iter().any(|b| s == b)) {
                     set.push(*num);
                 } else {
                     acc = false;
@@ -41,8 +40,8 @@ fn fix_page(page: &[usize], rules: &HashMap<usize, Vec<usize>>) -> VecDeque<usiz
     for num in page {
         if let Some(before) = rules.get(num) {
             let mut later = VecDeque::new();
-            for s in set.clone().iter() {
-                if before.iter().any(|b| s == b) {
+            for check in set.clone().iter() {
+                if before.iter().any(|b| check == b) {
                     let swap = set.pop_back().unwrap();
                     later.push_front(swap);
                 }
@@ -55,7 +54,7 @@ fn fix_page(page: &[usize], rules: &HashMap<usize, Vec<usize>>) -> VecDeque<usiz
     }
     set
 }
-pub fn part_1() {
+pub fn part1_2() {
     let data = std::fs::read_to_string("../day5.txt").unwrap();
     let (rules, pages) = data.split_once("\n\n").unwrap();
 
@@ -73,6 +72,7 @@ pub fn part_1() {
         .filter(|p| check_page(p, &rules))
         .map(|v| v[v.len() / 2])
         .sum::<usize>();
+
     let ans2 = pages
         .iter()
         .filter(|p| !check_page(p, &rules))
