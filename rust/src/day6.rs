@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use std::collections::HashSet;
 
 struct Lab {
@@ -71,7 +72,6 @@ fn walk(mut lab: Lab, map: &[Vec<char>]) -> usize {
 }
 fn loops(mut lab: Lab, map: &[Vec<char>]) -> bool {
     let mut unique = HashSet::new();
-    let starting = lab.pos;
     while (lab.pos.0 > 0 || lab.pos.0 < map.len() as i32)
         || (lab.pos.1 > 0 || lab.pos.1 < map[0].len() as i32)
     {
@@ -106,6 +106,42 @@ fn loops(mut lab: Lab, map: &[Vec<char>]) -> bool {
     }
     false
 }
+fn loops_par(mut lab: Lab, map: &[Vec<char>], obstacle: (usize, usize)) -> bool {
+    let mut unique = HashSet::new();
+    while (lab.pos.0 > 0 || lab.pos.0 < map.len() as i32)
+        || (lab.pos.1 > 0 || lab.pos.1 < map[0].len() as i32)
+    {
+        if !unique.insert((lab.pos, lab.get_direction())) {
+            return true;
+        }
+        let (ahead_i, ahead_j) = (
+            lab.pos.0 + lab.get_direction().0,
+            lab.pos.1 + lab.get_direction().1,
+        );
+
+        let ahead_i: usize = match ahead_i.try_into() {
+            Ok(ahead) => ahead,
+            _ => break,
+        };
+
+        let ahead_j: usize = match ahead_j.try_into() {
+            Ok(ahead) => ahead,
+            _ => break,
+        };
+
+        let cell = match map.get(ahead_i).and_then(|row| row.get(ahead_j)) {
+            Some(cell) => cell,
+            _ => break,
+        };
+
+        if *cell == '#' || (ahead_i, ahead_j) == obstacle {
+            lab.turn_90();
+        } else {
+            lab.pos = (ahead_i.try_into().unwrap(), ahead_j.try_into().unwrap());
+        }
+    }
+    false
+}
 pub fn part1() {
     let data = std::fs::read_to_string("../day6.txt").unwrap();
     let map = data
@@ -129,7 +165,7 @@ pub fn part1() {
 }
 pub fn part2() {
     let data = std::fs::read_to_string("../day6.txt").unwrap();
-    let mut map = data
+    let map = data
         .lines()
         .map(|l| l.chars().collect::<Vec<_>>())
         .collect::<Vec<_>>();
@@ -145,18 +181,19 @@ pub fn part2() {
         })
         .unwrap();
 
-    let mut counter = 0;
-    for i in 0..map.len() {
-        for j in 0..map[0].len() {
-            let original = map[i][j];
-            map[i][j] = '#';
+    let ans: usize = (0..map.len())
+        .into_par_iter()
+        .map(|i| {
+            let map = &map;
+            (0..map[0].len())
+                .map(move |j| {
+                    let lab = Lab::new((pos_i as i32, pos_j as i32));
+                    loops_par(lab, map, (i, j))
+                })
+                .filter(|f| *f)
+                .count()
+        })
+        .sum();
 
-            if loops(Lab::new((pos_i as i32, pos_j as i32)), &map) {
-                counter += 1;
-            }
-            map[i][j] = original;
-        }
-    }
-
-    println!(" {counter}");
+    println!("{ans}");
 }
