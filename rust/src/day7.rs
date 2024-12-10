@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use itertools::{repeat_n, Itertools};
 use rayon::prelude::*;
 
@@ -61,26 +63,31 @@ pub fn part2() {
         })
         .collect::<Vec<_>>();
 
+    let start = Instant::now();
     let ans: usize = puzzle
         .par_iter()
         .filter(|test| find_operations_2(test))
         .map(|t| t.0)
         .sum();
-    println!("{ans}");
+    let duration = start.elapsed();
+    println!("{ans}->{:?}", duration);
+
+    let start = Instant::now();
     let ans: usize = puzzle
-        .iter()
+        .par_iter()
         .filter(|test| is_reachable(test.0, &test.1))
         .map(|t| t.0)
         .sum();
-    println!("{ans}");
+    let duration = start.elapsed();
+    println!("{ans}->{:?}", duration);
 }
 
 fn find_operations_2((target, nums): &(usize, Vec<usize>)) -> bool {
-    for ops in repeat_n(0..3, nums.len()).multi_cartesian_product() {
+    for ops in repeat_n(0..3, nums.len() - 1).multi_cartesian_product() {
         let sum = nums
             .iter()
             .copied()
-            .zip(ops.iter())
+            .zip(ops.iter().chain(std::iter::once(&0)))
             .reduce(|acc, u| {
                 if *acc.1 == 0 {
                     (acc.0 * u.0, u.1)
