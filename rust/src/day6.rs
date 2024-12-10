@@ -111,9 +111,6 @@ fn loops_par(mut lab: Lab, map: &[Vec<char>], obstacle: (usize, usize)) -> bool 
     while (lab.pos.0 > 0 || lab.pos.0 < map.len() as i32)
         || (lab.pos.1 > 0 || lab.pos.1 < map[0].len() as i32)
     {
-        if !unique.insert((lab.pos, lab.get_direction())) {
-            return true;
-        }
         let (ahead_i, ahead_j) = (
             lab.pos.0 + lab.get_direction().0,
             lab.pos.1 + lab.get_direction().1,
@@ -135,6 +132,10 @@ fn loops_par(mut lab: Lab, map: &[Vec<char>], obstacle: (usize, usize)) -> bool 
         };
 
         if *cell == '#' || (ahead_i, ahead_j) == obstacle {
+            if !unique.insert((lab.pos, lab.get_direction())) {
+                return true;
+            }
+
             lab.turn_90();
         } else {
             lab.pos = (ahead_i.try_into().unwrap(), ahead_j.try_into().unwrap());
